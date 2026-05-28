@@ -615,9 +615,11 @@ function initializeModules(bot, mcData, defaultMove) {
       if (type === 'register') {
         bot.chat(`/register ${password} ${password}`);
         console.log('[Auth] Detected register prompt - sent /register');
+        bot.chat('/supervanish')
       } else {
         bot.chat(`/login ${password}`);
         console.log('[Auth] Detected login prompt - sent /login');
+        bot.chat('/supervanish')
       }
     };
 
@@ -636,6 +638,7 @@ function initializeModules(bot, mcData, defaultMove) {
       if (!authHandled && bot && botState.connected) {
         console.log('[Auth] No prompt detected after 10s, sending /login as failsafe');
         bot.chat(`/login ${password}`);
+        bot.chat('/supervanish')
         authHandled = true;
       }
     }, 10000);
