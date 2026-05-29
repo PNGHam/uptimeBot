@@ -508,30 +508,59 @@ function createBot() {
 
       initializeModules(bot, mcData, defaultMove);
 
-      // Attempt creative mode (only works if bot has OP and enabled in settings)
-      setTimeout(() => {
-        if (bot && botState.connected && config.server['try-creative']) {
-          bot.chat('/gamemode spectator');
-          console.log('[INFO] Attempted to set spectator mode (requires OP)');
-          bot.chat('/supervanish')
-          console.log('[INFO] Attempted to go in vanish (requires OP)')
-        }
-      }, 10000);
+    let spectatorEnabled = false;
+let vanishEnabled = false;
 
-      bot.on('messagestr', (message) => {
-        if (
-          message.includes('commands.gamemode.success.self') ||
-          message.includes('Set own game mode to Spectator Mode')
-        ) {
-          console.log('[INFO] Bot is now in Creative Mode.');
+setTimeout(() => {
+  if (!bot || !botState.connected || !config.server['try-creative']) return;
+
+  // Keep trying spectator until it succeeds
+  const spectatorInterval = setInterval(() => {
+    if (spectatorEnabled || !botState.connected) {
+      clearInterval(spectatorInterval);
+      return;
+    }
+
+    bot.chat('/gamemode spectator');
+    console.log('[INFO] Attempting to enter spectator mode...');
+  }, 2000);
+
+  bot.on('messagestr', (message) => {
+    // Spectator success
+    if (
+      !spectatorEnabled &&
+      (
+        message.includes('commands.gamemode.success.self') ||
+        message.includes('Set own game mode to Spectator Mode')
+      )
+    ) {
+      spectatorEnabled = true;
+      console.log('[INFO] The bot is in spectator mode.');
+
+      // Start vanish spam only after spectator succeeds
+      const vanishInterval = setInterval(() => {
+        if (vanishEnabled || !botState.connected) {
+          clearInterval(vanishInterval);
+          return;
         }
-        if (
-          message.includes('You are now')
-        ) {
-          console.log('[INFO] Bot is now in vanish.');
+
+        bot.chat('/supervanish');
+        console.log('[INFO] Attempting to enter SuperVanish...');
+      }, 2000);
+
+      // Vanish success
+      const vanishListener = (msg) => {
+        if (!vanishEnabled && msg.includes('You are now')) {
+          vanishEnabled = true;
+          console.log('[INFO] Entered SuperVanish mode.');
+          bot.removeListener('messagestr', vanishListener);
         }
-      });
-    });
+      };
+
+      bot.on('messagestr', vanishListener);
+    }
+  });
+}, 10000);
 
     // FIX: 'kicked' fires before 'end'. Remove the scheduleReconnect from 'kicked'
     // so that 'end' is the single source of reconnect truth, preventing double-trigger.
