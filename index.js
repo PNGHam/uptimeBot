@@ -526,7 +526,7 @@ function createBot() {
           console.log('[INFO] Bot is now in Creative Mode.');
         }
         if (
-          message.includes('Set own game mode to Spectator Mode')
+          message.includes('You are now')
         ) {
           console.log('[INFO] Bot is now in vanish.');
         }
