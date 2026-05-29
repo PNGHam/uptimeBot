@@ -516,7 +516,7 @@ function createBot() {
           bot.chat('/supervanish')
           console.log('[INFO] Attempted to go in vanish (requires OP)')
         }
-      }, 3000);
+      }, 10000);
 
       bot.on('messagestr', (message) => {
         if (
