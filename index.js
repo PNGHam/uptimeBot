@@ -492,7 +492,7 @@ function createBot() {
       botState.lastActivity = Date.now();
       botState.reconnectAttempts = 0;
       isReconnecting = false;
-
+      bot.chat(`/login ${password}`);
       console.log(`[Bot] [+] Successfully spawned on server! (Version: ${bot.version})`);
       if (config.discord && config.discord.events && config.discord.events.connect) {
         sendDiscordWebhook(`[+] **Connected** to \`${config.server.ip}\``, 0x4ade80);
