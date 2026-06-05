@@ -513,7 +513,7 @@ function createBot() {
         if (bot && botState.connected && config.server['try-creative']) {
           bot.chat('/gamemode spectator');
           console.log('[INFO] Attempted to set spectator mode (requires OP)');
-          bot.chat('/vanish');
+          bot.chat('/supervanish');
           console.log('[INFO] Attempted to go in vanish.');
         }
       }, 10000);
@@ -521,9 +521,9 @@ function createBot() {
       bot.on('messagestr', (message) => {
         if (
           message.includes('commands.gamemode.success.self') ||
-          message.includes('Set own game mode to Creative Mode')
+          message.includes('Set own game mode to Spectator Mode')
         ) {
-          console.log('[INFO] Bot is now in Creative Mode.');
+          console.log('[INFO] Bot is now in Spectator Mode.');
         }
         if (
           message.includes('You are now')
