@@ -513,7 +513,7 @@ function createBot() {
         if (bot && botState.connected && config.server['try-creative']) {
           bot.chat('/gamemode spectator');
           console.log('[INFO] Attempted to set spectator mode (requires OP)');
-          bot.chat('/supervanish');
+          bot.chat('/vanish');
           console.log('[INFO] Attempted to go in vanish.');
         }
       }, 10000);
