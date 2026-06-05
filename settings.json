@@ -9,7 +9,7 @@
     "ip": "quarrelsmp.mcsh.io",
     "port": 25565,
     "version": "",
-    "try-creative": true
+    "try-creative": false
   },
   "position": {
     "enabled": true,
