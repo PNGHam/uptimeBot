@@ -446,6 +446,9 @@ function startPlayerGuardPolling() {
     return;
   }
 
+  // Safety: clear reconnect flag so createBot() is never blocked when polling fires
+  isReconnecting = false;
+
   console.log('[PlayerGuard] Starting pre-join player check (every 30s)...');
 
   // minecraft-protocol is a transitive dependency of mineflayer — always available
@@ -635,8 +638,12 @@ function createBot() {
         if (bot && botState.connected && config.server['try-creative']) {
           bot.chat('/gamemode spectator');
           console.log('[INFO] Attempted to set spectator mode (requires OP)');
-          bot.chat('/supervanish');
-          console.log('[INFO] Attempted to go in vanish.');
+          setTimeout(() => {
+            if (bot && botState.connected) {
+              bot.chat('/supervanish');
+              console.log('[INFO] Attempted to go in vanish.');
+            }
+          }, 1000);
         }
       }, 10000);
 
@@ -692,8 +699,8 @@ function createBot() {
         // Player guard triggered this disconnect — do NOT reconnect immediately.
         // Go back to pre-join polling so we wait until the server is empty again.
         disconnectedByPlayerDetection = false;
-        // Keep occupiedNotificationSent = true so polling doesn't fire the webhook again
-        // for the same occupied session; it resets naturally when the server empties.
+        occupiedNotificationSent = false; // fresh state: let polling send the webhook for this new occupied session
+        isReconnecting = false;           // safety reset — ensures createBot() is never silently blocked
         console.log('[PlayerGuard] Returning to pre-join polling mode (server occupied).');
         startPlayerGuardPolling();
       } else {
@@ -770,14 +777,14 @@ function initializeModules(bot, mcData, defaultMove) {
       }
     });
 
-    // Failsafe: if no prompt after 10s, try login anyway
+    // Failsafe: if no prompt after 3s, try login anyway
     setTimeout(() => {
       if (!authHandled && bot && botState.connected) {
-        console.log('[Auth] No prompt detected after 10s, sending /login as failsafe');
+        console.log('[Auth] No prompt detected after 3s, sending /login as failsafe');
         bot.chat(`/login ${password}`);
         authHandled = true;
       }
-    }, 10000);
+    }, 3000);
   }
 
   // ---------- CHAT MESSAGES ----------
