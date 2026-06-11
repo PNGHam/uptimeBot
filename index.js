@@ -466,11 +466,22 @@ function startPlayerGuardPolling() {
           return;
         }
 
-        const onlinePlayers = (response && response.players && typeof response.players.online === 'number')
+        let onlinePlayers = (response && response.players && typeof response.players.online === 'number')
           ? response.players.online
           : 0;
 
-        console.log(`[PlayerGuard] Ping OK — ${onlinePlayers} player(s) online`);
+        // The server list ping includes the bot itself as an online player while it's
+        // still being flushed from the server's player list after a disconnect.
+        // Check the sample array for the bot's own username and subtract it from the count.
+        const sample = (response && response.players && Array.isArray(response.players.sample))
+          ? response.players.sample
+          : [];
+        if (sample.some(p => p.name === config.name)) {
+          onlinePlayers = Math.max(0, onlinePlayers - 1);
+          console.log(`[PlayerGuard] Bot still in server list — adjusted count to ${onlinePlayers}`);
+        }
+
+        console.log(`[PlayerGuard] Ping OK — ${onlinePlayers} real player(s) online`);
 
         if (onlinePlayers === 0) {
           // Server is empty — safe to join
