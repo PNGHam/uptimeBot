@@ -454,48 +454,57 @@ function startPlayerGuardPolling() {
   // minecraft-protocol is a transitive dependency of mineflayer — always available
   const mc = require('minecraft-protocol');
 
-  function checkAndJoin() {
-    mc.ping(
-      { host: config.server.ip, port: config.server.port },
-      (err, response) => {
-        if (err) {
-          // Can't ping (server offline / firewalled) — join anyway and let mineflayer handle it
-          console.log('[PlayerGuard] Ping error:', err.message, '— proceeding to join');
-          stopPlayerGuardPolling();
-          occupiedNotificationSent = false;
-          createBot();
-          return;
-        }
+function checkAndJoin() {
+  mc.ping(
+    {
+      host: config.server.ip,
+      port: config.server.port
+    },
+    (err, response) => {
 
-        const onlinePlayers = (response && response.players && typeof response.players.online === 'number')
+      // If we can't verify the server state, DO NOT CONNECT.
+      if (err) {
+        console.log(`[PlayerGuard] Ping failed: ${err.message} - waiting for next check...`);
+        return;
+      }
+
+      const onlinePlayers =
+        response &&
+        response.players &&
+        typeof response.players.online === 'number'
           ? response.players.online
           : 0;
 
-        console.log(`[PlayerGuard] Ping OK — ${onlinePlayers} player(s) online`);
+      console.log(`[PlayerGuard] Server check: ${onlinePlayers} player(s) online`);
 
-        if (onlinePlayers === 0) {
-          // Server is empty — safe to join
-          console.log('[PlayerGuard] Server is empty — proceeding to join.');
-          stopPlayerGuardPolling();
-          occupiedNotificationSent = false; // reset so next occupied session fires the webhook again
-          createBot();
-        } else {
-          // Server is occupied — notify once, then keep waiting silently
-          if (!occupiedNotificationSent) {
-            occupiedNotificationSent = true;
-            console.log(`[PlayerGuard] Server occupied (${onlinePlayers} player(s)) — bot is waiting.`);
-            sendDiscordWebhook(
-              `⚠️ **Server Occupied** — ${onlinePlayers} player(s) currently on \`${config.server.ip}\`.\nThe bot is standing by and will join automatically once the server is empty.`,
-              0xf59e0b // amber
-            );
-          } else {
-            console.log(`[PlayerGuard] Still occupied (${onlinePlayers} player(s)) — continuing to wait...`);
-          }
+      // Someone is online -> keep waiting
+      if (onlinePlayers > 0) {
+
+        if (!occupiedNotificationSent) {
+          occupiedNotificationSent = true;
+
+          console.log(
+            `[PlayerGuard] Server occupied (${onlinePlayers} player(s)) - waiting...`
+          );
+
+          sendDiscordWebhook(
+            `⚠️ **Server Occupied** — ${onlinePlayers} player(s) currently on \`${config.server.ip}\`.\nThe bot will continue waiting until the server is empty.`,
+            0xf59e0b
+          );
         }
-      }
-    );
-  }
 
+        return;
+      }
+
+      // No players -> connect
+      console.log('[PlayerGuard] Server empty - connecting bot.');
+
+      occupiedNotificationSent = false;
+      stopPlayerGuardPolling();
+      createBot();
+    }
+  );
+}
   checkAndJoin();  // fire immediately, then repeat on interval
   playerGuardIntervalId = setInterval(checkAndJoin, PLAYER_GUARD_POLL_INTERVAL);
 }
